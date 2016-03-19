@@ -6,6 +6,7 @@
     tools:context="com.chebao.slidemenu.MainActivity">
 
     <com.chebao.slidemenu.view.SlideMenu
+        android:id="@+id/slideMenu"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 

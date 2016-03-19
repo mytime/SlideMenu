@@ -5,17 +5,19 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.Scroller;
 
 /**
- *
+ * 侧滑菜单
  */
 public class SlideMenu extends FrameLayout {
 
     private View menuView, mainView;
     private int menuWidth = 0;
     private int downX;
+
+    private Scroller scroller; // 2
 
     public SlideMenu(Context context) {
         super(context);
@@ -29,6 +31,7 @@ public class SlideMenu extends FrameLayout {
     }
 
     private void init() {
+        scroller  = new Scroller(getContext()); // 2
 
     }
 
@@ -43,9 +46,38 @@ public class SlideMenu extends FrameLayout {
         super.onFinishInflate();
         menuView = getChildAt(0);  //<include layout="@layout/layout_menu" />
         mainView = getChildAt(1); //<include layout="@layout/layout_main" />
-
         menuWidth = menuView.getLayoutParams().width;
 
+    }
+
+    /**
+     * onInterceptTouchEvent 触摸拦截事件
+     * 让左侧菜单可以左右滑动
+     * 鼠标悬停拦截事件 ，true 拦截，false 不拦截
+     * @param event
+     * @return
+     */
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+
+        switch(event.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                downX = (int) event.getX(); //按下时的X坐标
+
+                break;
+            case MotionEvent.ACTION_MOVE:
+                //滑动的像素
+                int deltaX = (int) (event.getX() - downX);
+                if (Math.abs(deltaX) > 8 ){ //滑动大于8像素
+
+                    return true; //拦截，
+
+                }
+                break;
+        }
+
+//        return super.onInterceptHoverEvent(event);  //默认false,不拦截
+        return true;  //默认false,不拦截
     }
 
     /**
@@ -90,8 +122,89 @@ public class SlideMenu extends FrameLayout {
                 break;
             case MotionEvent.ACTION_UP:
 
+                //方法1 ： 使用自定义动画
+
+//                ScrollAnimation scrollAnimation;
+//                if (getScrollX() > -menuWidth / 2){
+//                    //关闭菜单
+////                    scrollTo(0, 0); //瞬间执行
+//                    scrollAnimation = new ScrollAnimation(this,0);
+//
+//                }else{
+//                    //打开菜单
+////                    scrollTo(-menuWidth , 0);
+//                    scrollAnimation = new ScrollAnimation(this,-menuWidth);
+//                }
+//                startAnimation(scrollAnimation); //执行动画
+
+
+                //方法2： 使用Scroller
+                if(getScrollX() > - menuWidth/2){
+                    //关闭菜单
+                    closeMenu();
+
+                }else{
+                    //打开菜单
+                    openMenu();
+
+                }
+
                 break;
         }
         return true;
+    }
+
+    private void closeMenu(){
+        //关闭菜单
+        /**
+         * startX,
+         * startY,
+         * dx,
+         * dy,
+         * 400 效果持续时间
+         */
+
+        scroller.startScroll(getScrollX(),0,0-getScrollX(),0,400);
+        invalidate();//刷新
+
+    }
+    private void openMenu(){
+        //打开菜单
+        scroller.startScroll(getScrollX(),0,-menuWidth-getScrollX(),0,400);
+        invalidate();//刷新
+    }
+
+    /**
+     * 2
+     * Scroller不会主动调用这个方法
+     * 但是invalidate会主动调用这个方法
+     */
+    @Override
+    public void computeScroll() {
+        super.computeScroll();
+
+        if (scroller.computeScrollOffset()){ //返回true,表示动画没有结束
+            // arg X ,Y
+            scrollTo(scroller.getCurrX(),0);
+            invalidate(); //递归调用这个方法
+
+        }
+    }
+
+    /**
+     * 切换菜单的开和关
+     */
+    public void switchMenu() {
+        if (getScrollX() ==0){
+            //需要打开
+            openMenu();
+
+        }else {
+            //需要关闭
+            closeMenu();
+
+        }
+
+
     }
 }
